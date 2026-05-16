@@ -3,10 +3,11 @@ services:
     build: .
     container_name: podcast-proxy
     restart: unless-stopped
+    network_mode: host
     env_file:
       - .env
     volumes:
       - ./config:/app/config
       - ./podcasts:/app/podcasts
-    ports:
-      - "3000:3000"
+    # ports: is not used with network_mode: host
+    # the container shares the host network stack directly
