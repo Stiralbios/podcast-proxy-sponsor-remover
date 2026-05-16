@@ -1,0 +1,30 @@
+[project]
+name = "podcast-proxy"
+version = "0.2.0"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2",
+    "pyyaml",
+    "feedparser",
+    "feedgen",
+    "requests",
+    "apscheduler",
+    "starlette",
+    "uvicorn",
+    "langchain-openai",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "httpx",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
