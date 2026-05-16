@@ -1,0 +1,12 @@
+services:
+  podcast-proxy:
+    build: .
+    container_name: podcast-proxy
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./config:/app/config
+      - ./podcasts:/app/podcasts
+    ports:
+      - "3000:3000"

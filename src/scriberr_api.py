@@ -34,8 +34,12 @@ class ScriberrClient:
         """Look up a transcription profile by name and return its parameters."""
         url = f"{self.base_url}/api/v1/profiles"
         logger.debug("GET %s", url)
-        resp = requests.get(url, headers=self.headers, timeout=30)
-        resp.raise_for_status()
+        try:
+            resp = requests.get(url, headers=self.headers, timeout=30)
+            resp.raise_for_status()
+        except requests.ConnectionError:
+            logger.warning("Could not reach Scriberr at %s; skipping profile lookup", self.base_url)
+            return None
         profiles = resp.json()
         for profile in profiles:
             if profile.get("name") == name:
