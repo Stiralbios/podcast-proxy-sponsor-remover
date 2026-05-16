@@ -88,6 +88,7 @@ def main() -> None:
         user_prompt_template=user_prompt,
         profile_params=profile_params,
         scriberr_check_interval=settings.get("scriberr_check_interval", 30),
+        mark_ads=settings.get("mark_ads", False),
     )
 
     base_url = os.environ.get("BASE_URL", "http://localhost:3000")

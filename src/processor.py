@@ -1,3 +1,6 @@
+"""Podcast audio processor: transcribes, detects ads, and either strips or
+marks them depending on configuration."""
+
 from __future__ import annotations
 
 import json
@@ -8,7 +11,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from ffmpeg_segments import remove_segments
+from ffmpeg_segments import mark_segments, remove_segments
 from llm import LLMClient
 from scriberr_api import ScriberrClient
 
@@ -16,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class AudioProcessor:
-    """Remove sponsor/ad segments from podcast audio with checkpoint/resume.
+    """Transcribe -> detect ads -> either strip them (default) or mark them.
 
     If any step fails, falls back to copying the original file unchanged.
     """
@@ -28,15 +31,17 @@ class AudioProcessor:
         user_prompt_template: str,
         profile_params: dict | None = None,
         scriberr_check_interval: int = 30,
-    ):
+        mark_ads: bool = False,
+    ) -> None:
         self.sc = scriberr_client
         self.llm = llm_client
         self.user_prompt = user_prompt_template
         self.profile_params = profile_params
         self.check_interval = scriberr_check_interval
+        self.mark_ads = mark_ads
 
     def process(self, input_path: Path, output_path: Path, metadata_dir: Path) -> None:
-        """Remove sponsor segments with checkpoint/resume. On failure, copy original."""
+        """Process audio with checkpoint/resume. On failure, copy original."""
         metadata_dir = Path(metadata_dir)
         metadata_dir.mkdir(parents=True, exist_ok=True)
         stem = input_path.stem
@@ -60,15 +65,25 @@ class AudioProcessor:
                 logger.debug("Skipping LLM, segments exist: %s", segments_path)
                 segments = json.loads(segments_path.read_text(encoding="utf-8"))
 
-            # --- Step 3: Remove segments via ffmpeg ---
+            # --- Step 3: Strip or Mark segments via ffmpeg ---
             if not segments:
                 logger.info("No ad segments detected, copying original to %s", output_path)
                 shutil.copy2(input_path, output_path)
                 return
 
-            logger.info("Removing %d ad segments from %s", len(segments), input_path)
-            tmp = output_path.with_suffix(".tmp" + output_path.suffix)
-            remove_segments(input_path, segments, tmp)
+            if self.mark_ads:
+                logger.info(
+                    "Marking %d ad segments in %s (chapter-based)", len(segments), input_path
+                )
+                tmp = output_path.with_suffix(".tmp" + output_path.suffix)
+                mark_segments(input_path, segments, tmp, new_chapter_label="Ad / Sponsor")
+            else:
+                logger.info(
+                    "Removing %d ad segments from %s", len(segments), input_path
+                )
+                tmp = output_path.with_suffix(".tmp" + output_path.suffix)
+                remove_segments(input_path, segments, tmp)
+
             if not tmp.exists() or tmp.stat().st_size == 0:
                 raise RuntimeError("ffmpeg produced no output")
             os.replace(tmp, output_path)
