@@ -1,5 +1,4 @@
 # Runtime / data directories
-config/
 podcasts/
 
 # Python cache
@@ -13,6 +12,10 @@ __pycache__/
 # Virtual environments
 .venv/
 venv/
+
+# User-specific config files (personal tunables and feeds)
+config/settings.yml
+config/feeds.yaml
 
 # Environment / secrets
 .env
