@@ -14,15 +14,15 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def start_scheduler(feeds: list[FeedConfig], base_url: str, processor: AudioProcessor) -> BackgroundScheduler:
-    logger.info("Starting scheduler with %d feeds", len(feeds))
+def start_scheduler(feeds: list[FeedConfig], base_url: str, processor: AudioProcessor, sync_interval_hours: int = 1) -> BackgroundScheduler:
+    logger.info("Starting scheduler with %d feeds (interval=%dh)", len(feeds), sync_interval_hours)
     sched = BackgroundScheduler()
     for feed in feeds:
         logger.info("Registering scheduled job for %s", feed.podcast_slug)
         sched.add_job(
             sync_feed,
             trigger="interval",
-            hours=1,
+            hours=sync_interval_hours,
             args=[feed, base_url, processor],
             id=feed.podcast_slug,
             max_instances=1,

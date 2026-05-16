@@ -35,8 +35,13 @@ logging.basicConfig(
 
 
 def _load_settings(path: str = "config/settings.yml") -> dict:
-    raw = Path(path).read_text(encoding="utf-8")
-    return yaml.safe_load(raw)
+    p = Path(path)
+    if not p.exists():
+        logger.warning("Settings file %s not found, using defaults", path)
+        return {}
+    raw = p.read_text(encoding="utf-8")
+    data = yaml.safe_load(raw)
+    return data if data is not None else {}
 
 
 def main() -> None:
@@ -86,7 +91,8 @@ def main() -> None:
     )
 
     base_url = os.environ.get("BASE_URL", "http://localhost:3000")
-    sched = start_scheduler(config.feeds, base_url, processor)
+    sync_interval = settings.get("sync_interval_hours", 1)
+    sched = start_scheduler(config.feeds, base_url, processor, sync_interval)
     app = create_app(podcasts_dir)
 
     # Graceful shutdown
