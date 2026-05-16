@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import os
-import signal
 import sys
 from pathlib import Path
 
@@ -17,7 +16,7 @@ from config import load_config
 from llm import LLMClient, load_user_prompt
 from paths import FeedPaths
 from processor import AudioProcessor, verify_ffmpeg
-from scheduler import start_scheduler
+from scheduler import build_scheduler
 from scriberr_api import ScriberrClient
 from web import create_app
 
@@ -93,20 +92,10 @@ def main() -> None:
 
     base_url = os.environ.get("BASE_URL", "http://localhost:3000")
     sync_interval = settings.get("sync_interval_hours", 1)
-    sched = start_scheduler("config/feeds.yaml", base_url, processor, sync_interval)
-    app = create_app(podcasts_dir)
-
-    # Graceful shutdown
-    def _shutdown(signum, frame):
-        logger.info("Shutting down scheduler...")
-        sched.shutdown(wait=False)
-        sys.exit(0)
-
-    signal.signal(signal.SIGTERM, _shutdown)
-    signal.signal(signal.SIGINT, _shutdown)
+    sched, sync_all = build_scheduler("config/feeds.yaml", base_url, processor, sync_interval)
+    app = create_app(podcasts_dir, sched=sched, sync_all=sync_all)
 
     uvicorn.run(app, host="0.0.0.0", port=3000)
-    sched.shutdown(wait=False)
 
 
 if __name__ == "__main__":

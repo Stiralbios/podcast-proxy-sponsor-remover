@@ -1,6 +1,9 @@
+"""Scheduler: reloads config and runs periodic sync via APScheduler."""
+
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -10,8 +13,13 @@ from sync import sync_feed
 logger = logging.getLogger(__name__)
 
 
-def start_scheduler(config_path: str, base_url: str, processor, sync_interval_hours: int = 1):
-    logger.info("Starting scheduler (interval=%dh)", sync_interval_hours)
+def build_scheduler(config_path: str, base_url: str, processor: Any, sync_interval_hours: int = 1):
+    """Build and start the APScheduler background thread.
+
+    Returns (sched, sync_all) so the caller can trigger the initial sync
+    from an ASGI lifespan event or run it inline as desired.
+    """
+    logger.info("Building scheduler (interval=%dh)", sync_interval_hours)
     sched = BackgroundScheduler()
     _running = False  # Guard against overlapping execution
 
@@ -45,12 +53,8 @@ def start_scheduler(config_path: str, base_url: str, processor, sync_interval_ho
         id="sync-all",
         max_instances=1,
         replace_existing=True,
-        misfire_grace_time=0,
+        misfire_grace_time=1,
     )
     sched.start()
-
-    # Initial sync
-    logger.info("Beginning initial sync")
-    _sync_all()
-    logger.info("All initial syncs finished")
-    return sched
+    logger.info("APScheduler background thread started")
+    return sched, _sync_all
