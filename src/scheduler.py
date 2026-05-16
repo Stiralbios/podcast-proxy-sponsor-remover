@@ -1,43 +1,46 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
+from config import load_config
 from sync import sync_feed
-
-if TYPE_CHECKING:
-    from config import FeedConfig
-    from processor import AudioProcessor
 
 logger = logging.getLogger(__name__)
 
 
-def start_scheduler(feeds: list[FeedConfig], base_url: str, processor: AudioProcessor, sync_interval_hours: int = 1) -> BackgroundScheduler:
-    logger.info("Starting scheduler with %d feeds (interval=%dh)", len(feeds), sync_interval_hours)
+def start_scheduler(config_path: str, base_url: str, processor, sync_interval_hours: int = 1):
+    logger.info("Starting scheduler (interval=%dh)", sync_interval_hours)
     sched = BackgroundScheduler()
-    for feed in feeds:
-        logger.info("Registering scheduled job for %s", feed.podcast_slug)
-        sched.add_job(
-            sync_feed,
-            trigger="interval",
-            hours=sync_interval_hours,
-            args=[feed, base_url, processor],
-            id=feed.podcast_slug,
-            max_instances=1,
-            replace_existing=True,
-        )
-    logger.info("Starting APScheduler background thread")
-    sched.start()
-    # Initial sync: sequential, not parallel
-    logger.info("Beginning initial sync (sequential)")
-    for feed in feeds:
-        logger.info("Initial sync for %s starting", feed.podcast_slug)
+
+    def _sync_all() -> None:
         try:
-            sync_feed(feed, base_url, processor)
-            logger.info("Initial sync for %s completed", feed.podcast_slug)
+            config = load_config(config_path)
         except Exception:
-            logger.exception("Initial sync failed for %s", feed.podcast_slug)
+            logger.exception("Failed to reload config from %s", config_path)
+            return
+        logger.info("Reloaded %d feeds from %s", len(config.feeds), config_path)
+        for feed in config.feeds:
+            logger.info("Syncing %s", feed.podcast_slug)
+            try:
+                sync_feed(feed, base_url, processor)
+            except Exception:
+                logger.exception("Sync failed for %s", feed.podcast_slug)
+        logger.info("Batch sync finished (%d feeds)", len(config.feeds))
+
+    sched.add_job(
+        _sync_all,
+        trigger="interval",
+        hours=sync_interval_hours,
+        id="sync-all",
+        max_instances=1,
+        replace_existing=True,
+    )
+    sched.start()
+
+    # Initial sync
+    logger.info("Beginning initial sync")
+    _sync_all()
     logger.info("All initial syncs finished")
     return sched

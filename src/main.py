@@ -92,7 +92,7 @@ def main() -> None:
 
     base_url = os.environ.get("BASE_URL", "http://localhost:3000")
     sync_interval = settings.get("sync_interval_hours", 1)
-    sched = start_scheduler(config.feeds, base_url, processor, sync_interval)
+    sched = start_scheduler("config/feeds.yaml", base_url, processor, sync_interval)
     app = create_app(podcasts_dir)
 
     # Graceful shutdown
