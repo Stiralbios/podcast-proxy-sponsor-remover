@@ -68,7 +68,7 @@ class FakeFeedPaths:
 
     @property
     def new_rss_file(self) -> Path:
-        path = self.podcast_dir / "new"
+        path = self.podcast_dir / "new" / "rss"
         path.mkdir(parents=True, exist_ok=True)
         return path / "full.atom"
 

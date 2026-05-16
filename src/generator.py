@@ -73,8 +73,11 @@ def generate_atom(
     image = getattr(original_parsed.feed, "image", None)
     if image and hasattr(image, "href"):
         fg.logo(str(image.href))
-    elif hasattr(original_parsed.feed, "logo") and original_parsed.feed.logo:
-        fg.logo(str(original_parsed.feed.logo))
+
+    # Podcast itunes:image (podcast extension)
+    itunes_image = getattr(original_parsed.feed, "image", None)
+    if itunes_image and hasattr(itunes_image, "href"):
+        fg.podcast.itunes_image(str(itunes_image.href))
 
     # Author
     author_name = getattr(original_parsed.feed, "author", "")

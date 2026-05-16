@@ -11,7 +11,7 @@ def test_feed_paths(tmp_path):
     assert fp.old_media_dir == tmp_path / "test-podcast" / "old" / "media"
     assert fp.old_rss_file == tmp_path / "test-podcast" / "old" / "rss" / "full.atom"
     assert fp.new_media_dir == tmp_path / "test-podcast" / "new" / "media"
-    assert fp.new_rss_file == tmp_path / "test-podcast" / "new" / "full.atom"
+    assert fp.new_rss_file == tmp_path / "test-podcast" / "new" / "rss" / "full.atom"
 
 
 def test_directories_created(tmp_path):
