@@ -13,21 +13,30 @@ logger = logging.getLogger(__name__)
 def start_scheduler(config_path: str, base_url: str, processor, sync_interval_hours: int = 1):
     logger.info("Starting scheduler (interval=%dh)", sync_interval_hours)
     sched = BackgroundScheduler()
+    _running = False  # Guard against overlapping execution
 
     def _sync_all() -> None:
-        try:
-            config = load_config(config_path)
-        except Exception:
-            logger.exception("Failed to reload config from %s", config_path)
+        nonlocal _running
+        if _running:
+            logger.warning("Previous sync still running, skipping this scheduled run")
             return
-        logger.info("Reloaded %d feeds from %s", len(config.feeds), config_path)
-        for feed in config.feeds:
-            logger.info("Syncing %s", feed.podcast_slug)
+        _running = True
+        try:
             try:
-                sync_feed(feed, base_url, processor)
+                config = load_config(config_path)
             except Exception:
-                logger.exception("Sync failed for %s", feed.podcast_slug)
-        logger.info("Batch sync finished (%d feeds)", len(config.feeds))
+                logger.exception("Failed to reload config from %s", config_path)
+                return
+            logger.info("Reloaded %d feeds from %s", len(config.feeds), config_path)
+            for feed in config.feeds:
+                logger.info("Syncing %s", feed.podcast_slug)
+                try:
+                    sync_feed(feed, base_url, processor)
+                except Exception:
+                    logger.exception("Sync failed for %s", feed.podcast_slug)
+            logger.info("Batch sync finished (%d feeds)", len(config.feeds))
+        finally:
+            _running = False
 
     sched.add_job(
         _sync_all,
@@ -36,6 +45,7 @@ def start_scheduler(config_path: str, base_url: str, processor, sync_interval_ho
         id="sync-all",
         max_instances=1,
         replace_existing=True,
+        misfire_grace_time=0,
     )
     sched.start()
 
