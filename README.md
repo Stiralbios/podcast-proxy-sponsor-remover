@@ -251,6 +251,8 @@ pytest tests/integration/ -v
 ```
 
 ---
+## Note
+Vibecoded for personal use
 
 ## License
 
