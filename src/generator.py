@@ -134,7 +134,7 @@ def generate_atom(
             orig_url = orig_enc.get("href", orig_enc.get("url", ""))
             filename = media_urls.get(str(orig_url), "")
             if filename:
-                enc_url = f"{base_url.rstrip('/')}/{feed_config.feed_path}/new/media/{filename}"
+                enc_url = f"{base_url.rstrip('/')}/{feed_config.podcast_slug}/new/media/{filename}"
                 enc_type = orig_enc.get("type", "audio/mpeg")
                 enc_length = orig_enc.get("length", "0")
                 try:

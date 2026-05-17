@@ -13,7 +13,6 @@ class FeedConfig(BaseModel):
     feed_url: str
     keep_article: int
     podcast_slug: str
-    feed_path: str
 
     @field_validator("podcast_slug")
     @classmethod

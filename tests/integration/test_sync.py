@@ -125,7 +125,6 @@ def test_sync_feed_pipeline(tmp_path, monkeypatch):
         feed_url="https://example.com/feed.rss",
         keep_article=2,
         podcast_slug="test-podcast",
-        feed_path="test-podcast",
     )
     sync_feed(cfg, "https://proxy.example.com", _make_mock_processor())
 
@@ -161,7 +160,6 @@ def test_sync_feed_idempotent(tmp_path, monkeypatch):
         feed_url="https://example.com/feed.rss",
         keep_article=2,
         podcast_slug="test-podcast",
-        feed_path="test-podcast",
     )
 
     # Create pre-existing old/new media so skips happen
@@ -187,7 +185,6 @@ def test_sync_feed_cleanup_orphaned(tmp_path, monkeypatch):
         feed_url="https://example.com/feed.rss",
         keep_article=2,  # start with 2
         podcast_slug="test-podcast",
-        feed_path="test-podcast",
     )
     sync_feed(cfg, "https://proxy.example.com", _make_mock_processor())
 
@@ -221,7 +218,6 @@ def test_sync_feed_partial_failure(tmp_path, monkeypatch):
         feed_url="https://example.com/feed.rss",
         keep_article=2,
         podcast_slug="test-podcast",
-        feed_path="test-podcast",
     )
     sync_feed(cfg, "https://proxy.example.com", _make_mock_processor())
 

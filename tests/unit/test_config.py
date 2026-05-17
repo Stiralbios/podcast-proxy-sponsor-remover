@@ -14,7 +14,6 @@ feeds:
   - feed_url: "https://example.com/podcast.rss"
     keep_article: 10
     podcast_slug: "my-podcast"
-    feed_path: "my-podcast"
 """
     )
     cfg = load_config(yaml_path)
@@ -23,13 +22,12 @@ feeds:
     assert cfg.feeds[0].feed_url == "https://example.com/podcast.rss"
     assert cfg.feeds[0].keep_article == 10
     assert cfg.feeds[0].podcast_slug == "my-podcast"
-    assert cfg.feeds[0].feed_path == "my-podcast"
 
 
 def test_missing_field():
     with pytest.raises(ValidationError):
         FeedConfig.model_validate(
-            {"feed_url": "https://example.com", "keep_article": 5, "podcast_slug": "ok"}
+            {"feed_url": "https://example.com", "keep_article": 5}
         )
 
 
@@ -40,7 +38,6 @@ def test_bad_slug():
                 "feed_url": "https://example.com",
                 "keep_article": 5,
                 "podcast_slug": "bad/slug",
-                "feed_path": "bad/slug",
             }
         )
 
@@ -52,7 +49,6 @@ def test_bad_slug_with_backslash():
                 "feed_url": "https://example.com",
                 "keep_article": 5,
                 "podcast_slug": "bad\\slug",
-                "feed_path": "bad/slug",
             }
         )
 
@@ -64,6 +60,5 @@ def test_bad_slug_with_space():
                 "feed_url": "https://example.com",
                 "keep_article": 5,
                 "podcast_slug": "bad slug",
-                "feed_path": "bad/slug",
             }
         )

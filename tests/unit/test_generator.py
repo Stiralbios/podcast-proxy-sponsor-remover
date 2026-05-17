@@ -4,7 +4,6 @@ import calendar
 import time
 
 import feedparser
-import pytest
 
 import generator
 from config import FeedConfig
@@ -63,7 +62,6 @@ def test_generate_atom_guid_match():
         feed_url="https://example.com/feed.rss",
         keep_article=10,
         podcast_slug="test-podcast",
-        feed_path="test-podcast",
     )
     entries = parsed.entries[: cfg.keep_article]
     media_urls = {
@@ -89,7 +87,6 @@ def test_generate_atom_respects_keep_article():
         feed_url="https://example.com/feed.rss",
         keep_article=1,
         podcast_slug="test-podcast",
-        feed_path="test-podcast",
     )
     entries = parsed.entries[: cfg.keep_article]
     xml = generate_atom(cfg, parsed, entries, {}, "https://proxy.example.com")
@@ -115,7 +112,6 @@ def test_generate_atom_requires_author():
         feed_url="https://example.com/feed.rss",
         keep_article=10,
         podcast_slug="test-podcast",
-        feed_path="test-podcast",
     )
     entries = parsed.entries[: cfg.keep_article]
     xml = generate_atom(cfg, parsed, entries, {}, "https://proxy.example.com")
