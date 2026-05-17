@@ -90,7 +90,9 @@ def main() -> None:
         mark_ads=settings.get("mark_ads", False),
     )
 
-    base_url = os.environ.get("BASE_URL", "http://localhost:3000")
+    base_url = settings.get(
+        "base_url", os.environ.get("BASE_URL", "http://localhost:3000")
+    )
     sync_interval = settings.get("sync_interval_hours", 1)
     sched, sync_all = build_scheduler("config/feeds.yaml", base_url, processor, sync_interval)
     app = create_app(podcasts_dir, sched=sched, sync_all=sync_all)
