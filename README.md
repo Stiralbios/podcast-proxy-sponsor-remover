@@ -2,8 +2,6 @@
 
 A synchronous Python proxy server that downloads podcast RSS feeds, removes sponsor/ad segments from the audio using Scriberr transcription + LLM detection + FFmpeg, and serves the cleaned episodes over HTTP as a new Atom feed.
 
-**Core philosophy:** Everything is synchronous. No `async`, no `await`, no thread pools. One loop per feed, sequential, easy to reason about.
-
 ---
 
 ## What It Does
