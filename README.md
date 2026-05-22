@@ -46,7 +46,6 @@ feeds:
   - feed_url: "https://feed.skeptoid.com/"
     keep_article: 10
     podcast_slug: "skeptoid"
-    feed_path: "skeptoid.atom"
 ```
 
 | Field | Meaning |
@@ -54,7 +53,6 @@ feeds:
 | `feed_url` | Upstream RSS or Atom URL |
 | `keep_article` | How many recent episodes to keep in the proxy feed |
 | `podcast_slug` | Directory name on disk (alphanumeric + hyphens only) |
-| `feed_path` | URL path prefix for enclosure URLs in the generated Atom |
 
 ### 3. Set environment variables
 
@@ -91,8 +89,8 @@ BASE_URL=http://localhost:3000 python3 src/main.py
 
 The server:
 - Runs an initial sync on startup (downloads + transcribes + processes)
-- Serves feeds at `http://localhost:3000/{feed_path}/rss/full.atom`
-- Serves audio at `http://localhost:3000/{feed_path}/media/{hash}.mp3`
+- Serves feeds at `http://localhost:3000/{podcast_slug}/rss/full.atom`
+- Serves audio at `http://localhost:3000/{podcast_slug}/media/{hash}.mp3`
 - Re-syncs every hour via APScheduler
 
 ---
