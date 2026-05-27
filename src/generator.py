@@ -61,6 +61,10 @@ def generate_atom(
     if feed_link:
         fg.link(href=str(feed_link), rel="alternate")
 
+    # Self link (recommended by W3C validator for Atom)
+    self_url = f"{base_url.rstrip('/')}/{feed_config.podcast_slug}/new/rss/full.atom"
+    fg.link(href=self_url, rel="self")
+
     feed_lang = getattr(original_parsed.feed, "language", "en")
     fg.language(str(feed_lang) if feed_lang else "en")
 
