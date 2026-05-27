@@ -87,6 +87,20 @@ def generate_atom(
         author_name = "Unknown"
     fg.author(name=str(author_name))
 
+    # Updated (mandatory for Atom)
+    feed_updated = getattr(original_parsed.feed, "updated_parsed", None)
+    if feed_updated is None:
+        # Fallback: use the most recent entry published date, or now
+        feed_updated = max(
+            (getattr(e, "published_parsed", None) for e in entries),
+            default=None,
+        )
+    dt_updated = _struct_time_to_datetime(feed_updated)
+    if dt_updated:
+        fg.updated(dt_updated)
+    else:
+        fg.updated(datetime.now(tz=timezone.utc))
+
     # Collect enclosure info keyed by entry id
     enclosure_map: dict[str, dict[str, Any]] = {}
 
