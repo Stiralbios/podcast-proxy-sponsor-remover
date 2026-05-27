@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 from typing import Any
 
 from feedgen.feed import FeedGenerator
-from lxml import etree
 
 from config import FeedConfig
 
@@ -38,7 +37,7 @@ def _first_audio_enclosure(entry: Any) -> dict | None:
     return None
 
 
-def generate_atom(
+def generate_rss(
     feed_config: FeedConfig,
     original_parsed: Any,
     entries: list[Any],
@@ -55,33 +54,26 @@ def generate_atom(
     feed_desc = getattr(original_parsed.feed, "description", "")
     if not feed_desc:
         feed_desc = getattr(original_parsed.feed, "subtitle", "")
+    if not feed_desc:
+        feed_desc = str(feed_title) if feed_title else "Podcast feed"
     fg.description(str(feed_desc) if feed_desc else "")
 
     feed_link = getattr(original_parsed.feed, "link", "")
     if feed_link:
         fg.link(href=str(feed_link), rel="alternate")
 
-    # Self link (recommended by W3C validator for Atom)
-    self_url = f"{base_url.rstrip('/')}/{feed_config.podcast_slug}/new/rss/full.atom"
+    # Self link
+    self_url = f"{base_url.rstrip('/')}/{feed_config.podcast_slug}/new/rss/full.rss"
     fg.link(href=self_url, rel="self")
 
     feed_lang = getattr(original_parsed.feed, "language", "en")
     fg.language(str(feed_lang) if feed_lang else "en")
 
-    feed_id = getattr(original_parsed.feed, "id", getattr(original_parsed.feed, "link", ""))
-    if not feed_id:
-        feed_id = feed_config.feed_url
-    fg.id(str(feed_id))
-
     # Image
     image = getattr(original_parsed.feed, "image", None)
     if image and hasattr(image, "href"):
         fg.logo(str(image.href))
-
-    # Podcast itunes:image (podcast extension)
-    itunes_image = getattr(original_parsed.feed, "image", None)
-    if itunes_image and hasattr(itunes_image, "href"):
-        fg.podcast.itunes_image(str(itunes_image.href))
+        fg.podcast.itunes_image(str(image.href))
 
     # Author
     author_name = getattr(original_parsed.feed, "author", "")
@@ -90,23 +82,20 @@ def generate_atom(
     if not author_name:
         author_name = "Unknown"
     fg.author(name=str(author_name))
+    fg.podcast.itunes_author(str(author_name))
 
-    # Updated (mandatory for Atom)
+    # lastBuildDate
     feed_updated = getattr(original_parsed.feed, "updated_parsed", None)
     if feed_updated is None:
-        # Fallback: use the most recent entry published date, or now
         feed_updated = max(
             (getattr(e, "published_parsed", None) for e in entries),
             default=None,
         )
     dt_updated = _struct_time_to_datetime(feed_updated)
     if dt_updated:
-        fg.updated(dt_updated)
+        fg.lastBuildDate(dt_updated)
     else:
-        fg.updated(datetime.now(tz=timezone.utc))
-
-    # Collect enclosure info keyed by entry id
-    enclosure_map: dict[str, dict[str, Any]] = {}
+        fg.lastBuildDate(datetime.now(tz=timezone.utc))
 
     # feedgen prepends entries internally; iterating reversed preserves upstream order
     for entry in reversed(entries):
@@ -118,6 +107,7 @@ def generate_atom(
         if not entry_id:
             entry_id = getattr(entry, "title", "")
         fe.id(str(entry_id))
+        fe.guid(str(entry_id))  # RSS <guid>
 
         title = getattr(entry, "title", "Untitled")
         fe.title(str(title))
@@ -146,7 +136,7 @@ def generate_atom(
             entry_author = author_name
         fe.author(name=str(entry_author))
 
-        # Enclosure info (feedgen's enclosure() is broken for Atom links)
+        # Enclosure
         orig_enc = _first_audio_enclosure(entry)
         if orig_enc:
             orig_url = orig_enc.get("href", orig_enc.get("url", ""))
@@ -156,29 +146,10 @@ def generate_atom(
                 enc_type = orig_enc.get("type", "audio/mpeg")
                 enc_length = orig_enc.get("length", "0")
                 try:
-                    enc_length = int(enc_length)
+                    enc_length = str(int(enc_length))
                 except (ValueError, TypeError):
-                    enc_length = 0
-                enclosure_map[str(entry_id)] = {
-                    "url": enc_url,
-                    "type": str(enc_type),
-                    "length": enc_length,
-                }
+                    enc_length = "0"
+                fe.enclosure(url=enc_url, type=str(enc_type), length=enc_length)
 
-    xml_bytes = fg.atom_str(pretty=True)
-    tree = etree.fromstring(xml_bytes)
-    ns = "{http://www.w3.org/2005/Atom}"
-
-    for entry_el in tree.findall(f"{ns}entry"):
-        id_el = entry_el.find(f"{ns}id")
-        if id_el is None or id_el.text is None:
-            continue
-        enc_info = enclosure_map.get(id_el.text)
-        if enc_info:
-            link_el = etree.SubElement(entry_el, f"{ns}link")
-            link_el.set("rel", "enclosure")
-            link_el.set("href", enc_info["url"])
-            link_el.set("type", enc_info["type"])
-            link_el.set("length", str(enc_info["length"]))
-
-    return etree.tostring(tree, pretty_print=True, xml_declaration=True, encoding="utf-8").decode("utf-8")
+    xml_bytes = fg.rss_str(pretty=True)
+    return xml_bytes.decode("utf-8")

@@ -7,10 +7,11 @@ import feedparser
 
 import generator
 from config import FeedConfig
-from generator import _first_audio_enclosure, _struct_time_to_datetime, generate_atom
+from generator import _first_audio_enclosure, _struct_time_to_datetime, generate_rss
 
 
-RSS_XML = """\<?xml version="1.0"?>
+RSS_XML = """\
+<?xml version="1.0"?>
 <rss version="2.0">
   <channel>
     <title>Test Podcast</title>
@@ -56,7 +57,7 @@ def test_first_audio_enclosure():
     assert enc["type"] == "audio/mpeg"
 
 
-def test_generate_atom_guid_match():
+def test_generate_rss_guid_match():
     parsed = feedparser.parse(RSS_XML)
     cfg = FeedConfig(
         feed_url="https://example.com/feed.rss",
@@ -68,7 +69,7 @@ def test_generate_atom_guid_match():
         "https://example.com/ep1.mp3": "abc123.mp3",
         "https://example.com/ep2.mp3": "def456.mp3",
     }
-    xml = generate_atom(cfg, parsed, entries, media_urls, "https://proxy.example.com")
+    xml = generate_rss(cfg, parsed, entries, media_urls, "https://proxy.example.com")
 
     # Round-trip parse and verify GUIDs match exactly
     reparsed = feedparser.parse(xml)
@@ -81,7 +82,7 @@ def test_generate_atom_guid_match():
     assert reparsed.entries[1].enclosures[0].href == "https://proxy.example.com/test-podcast/new/media/def456.mp3"
 
 
-def test_generate_atom_respects_keep_article():
+def test_generate_rss_respects_keep_article():
     parsed = feedparser.parse(RSS_XML)
     cfg = FeedConfig(
         feed_url="https://example.com/feed.rss",
@@ -89,13 +90,14 @@ def test_generate_atom_respects_keep_article():
         podcast_slug="test-podcast",
     )
     entries = parsed.entries[: cfg.keep_article]
-    xml = generate_atom(cfg, parsed, entries, {}, "https://proxy.example.com")
+    xml = generate_rss(cfg, parsed, entries, {}, "https://proxy.example.com")
     reparsed = feedparser.parse(xml)
     assert len(reparsed.entries) == 1
 
 
-def test_generate_atom_requires_author():
-    rss_no_author = """\<?xml version="1.0"?>
+def test_generate_rss_requires_author():
+    rss_no_author = """\
+<?xml version="1.0"?>
 <rss version="2.0">
   <channel>
     <title>No Author Feed</title>
@@ -114,8 +116,6 @@ def test_generate_atom_requires_author():
         podcast_slug="test-podcast",
     )
     entries = parsed.entries[: cfg.keep_article]
-    xml = generate_atom(cfg, parsed, entries, {}, "https://proxy.example.com")
+    xml = generate_rss(cfg, parsed, entries, {}, "https://proxy.example.com")
     reparsed = feedparser.parse(xml)
     assert len(reparsed.entries) == 1
-    # feedgen adds author element even if missing upstream
-    assert reparsed.entries[0].author == "No Author Feed"

@@ -23,7 +23,7 @@ class FeedPaths:
     def old_rss_file(self) -> Path:
         path = self.podcast_dir / "old" / "rss"
         path.mkdir(parents=True, exist_ok=True)
-        return path / "full.atom"
+        return path / "full.rss"
 
     @property
     def new_media_dir(self) -> Path:
@@ -35,7 +35,7 @@ class FeedPaths:
     def new_rss_file(self) -> Path:
         path = self.podcast_dir / "new" / "rss"
         path.mkdir(parents=True, exist_ok=True)
-        return path / "full.atom"
+        return path / "full.rss"
 
     @property
     def metadata_dir(self) -> Path:

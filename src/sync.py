@@ -8,7 +8,7 @@ from typing import Any
 
 from config import FeedConfig
 from fetcher import download_media, fetch_feed
-from generator import _first_audio_enclosure, generate_atom
+from generator import _first_audio_enclosure, generate_rss
 from paths import FeedPaths
 from processor import AudioProcessor
 
@@ -55,7 +55,7 @@ def sync_feed(feed_config: FeedConfig, base_url: str, processor: AudioProcessor)
 
     # 1. Download upstream feed
     raw_xml, parsed = fetch_feed(feed_config.feed_url)
-    rss_tmp = paths.old_rss_file.with_suffix(".tmp.atom")
+    rss_tmp = paths.old_rss_file.with_suffix(".tmp.rss")
     rss_tmp.write_text(raw_xml, encoding="utf-8")
     os.replace(rss_tmp, paths.old_rss_file)
 
@@ -115,9 +115,9 @@ def sync_feed(feed_config: FeedConfig, base_url: str, processor: AudioProcessor)
     valid_entries = [e for e in kept_entries if _has_valid_media(e)]
 
     # 5. Generate new Atom feed
-    atom_xml = generate_atom(feed_config, parsed, valid_entries, media_mappings, base_url)
-    new_rss_tmp = paths.new_rss_file.with_suffix(".tmp.atom")
-    new_rss_tmp.write_text(atom_xml, encoding="utf-8")
+    rss_xml = generate_rss(feed_config, parsed, valid_entries, media_mappings, base_url)
+    new_rss_tmp = paths.new_rss_file.with_suffix(".tmp.rss")
+    new_rss_tmp.write_text(rss_xml, encoding="utf-8")
     os.replace(new_rss_tmp, paths.new_rss_file)
 
     # 6. Clean up orphaned files no longer referenced
